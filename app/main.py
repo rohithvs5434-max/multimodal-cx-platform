@@ -184,8 +184,6 @@ async def analyze_audio(
     )
     print(f"--> Successfully published event_id={result_event.event_id}")
     return result_event
-        )
-    )
 
 
 @app.post("/api/alerts/{event_id}/handle")
