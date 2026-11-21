@@ -95,6 +95,12 @@ class MultimodalAnalyzer:
 
     def transcript(self, audio_path: Path) -> str:
         try:
+            torch.set_num_threads(1)
+            try:
+                torch.set_num_interop_threads(1)
+            except Exception:
+                pass
+
             if self._whisper is None:
                 import whisper
 
@@ -107,12 +113,17 @@ class MultimodalAnalyzer:
                     download_root=str(whisper_cache),
                 )
 
-            result = self._whisper.transcribe(
-                str(audio_path),
-                fp16=False,
-            )
+            with torch.inference_mode():
+                result = self._whisper.transcribe(
+                    str(audio_path),
+                    fp16=False,
+                    beam_size=1,
+                    best_of=1,
+                    temperature=0.0,
+                    condition_on_previous_text=False,
+                )
 
-            return result["text"].strip()
+            return result.get("text", "").strip()
         except Exception as exc:
             print(f"Warning: Whisper transcription failed ({exc}). Using statement fallback.")
             name = audio_path.name
@@ -201,10 +212,10 @@ class MultimodalAnalyzer:
                 confidence=0.0,
             )
 
-        # On Render / low-memory containers (RAM < 800 MB), use fast sentiment to avoid OS SIGKILL (OOM)
+        # On Render / low-memory containers (RAM < 1200 MB), use fast sentiment to avoid OS SIGKILL (OOM)
         if (
             self.settings.sentiment_model in ("fast", "vader", "lexicon")
-            or self._get_available_ram_mb() < 800
+            or self._get_available_ram_mb() < 1200
         ):
             return self._fast_sentiment(text)
 
