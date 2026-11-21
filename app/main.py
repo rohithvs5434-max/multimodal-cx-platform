@@ -131,33 +131,45 @@ def to_wav_16k(src: Path) -> Path:
 async def analyze_audio(
     audio: UploadFile = File(...), customer_id: str | None = Form(None)
 ) -> CXEvent:
-    if not audio.content_type or not audio.content_type.startswith("audio/"):
-        raise HTTPException(status_code=415, detail="Upload an audio file.")
+    is_audio_type = bool(audio.content_type and audio.content_type.startswith("audio/"))
+    is_audio_ext = bool(audio.filename and audio.filename.lower().endswith((".wav", ".mp3", ".m4a", ".ogg", ".flac")))
+    if not (is_audio_type or is_audio_ext):
+        raise HTTPException(status_code=415, detail="Please upload a valid audio file (.wav, .mp3, etc.).")
+
     body = await audio.read()
     if len(body) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(status_code=413, detail=f"Audio exceeds {settings.max_upload_mb} MB limit.")
+
     suffix = Path(audio.filename or "audio.wav").suffix or ".wav"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temporary:
         temporary.write(body)
         audio_path = Path(temporary.name)
+
     events, analyzer = requires_state()
     wav_path: Path | None = None
     try:
+        print(f"--> [1/4] Received audio: {audio.filename} ({len(body)} bytes)")
         wav_path = await asyncio.to_thread(to_wav_16k, audio_path)
+        print(f"--> [2/4] Running multimodal inference on: {wav_path}")
         transcript, emotion, sentiment, fusion = await asyncio.to_thread(
             analyzer.analyze, wav_path
         )
+        print(f"--> [3/4] Inference done: emotion={emotion.label}, sentiment={sentiment.label}")
     except Exception as exc:
-        print(f"Error during audio analysis: {exc}")
+        print(f"--> ERROR during audio analysis: {exc}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
     finally:
         audio_path.unlink(missing_ok=True)
         if wav_path is not None:
             wav_path.unlink(missing_ok=True)
+
+    print("--> [4/4] Publishing event to Redis Streams...")
     attention = build_attention(transcript, emotion, fusion)
     customer = (customer_id or "").strip()[:64] or None
     followup = await pop_followup(customer, fusion.score)
-    return await events.publish(
+    result_event = await events.publish(
         CXEvent(
             source="audio",
             customer_id=customer,
@@ -168,6 +180,10 @@ async def analyze_audio(
             alert=attention.summary if attention else None,
             attention=attention,
             followup=followup,
+        )
+    )
+    print(f"--> Successfully published event_id={result_event.event_id}")
+    return result_event
         )
     )
 

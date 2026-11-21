@@ -10,11 +10,14 @@ async function parseResponse(r, fallbackMsg) {
   try {
     d = JSON.parse(text);
   } catch {
-    if (r.status === 502 || r.status === 503) {
-      throw Error("Backend server is deploying, restarting, or waking up. Please wait 30 seconds and try again.");
+    if (r.status === 502) {
+      throw Error("Server memory limit reached or process crashed (HTTP 502). Check Render logs.");
+    }
+    if (r.status === 503) {
+      throw Error("Backend server is starting up or temporarily offline (HTTP 503).");
     }
     if (r.status === 504) {
-      throw Error("Request timed out while processing. Please try again.");
+      throw Error("Request timed out (HTTP 504). Processing took longer than 100 seconds.");
     }
     throw Error(fallbackMsg || `Server error (${r.status})`);
   }
