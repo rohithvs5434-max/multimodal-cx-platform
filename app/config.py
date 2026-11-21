@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     # Selected acoustic emotion model from Phase-2 comparison.
     emotion_model_path: Path = Path("models/emotion_cnn.pt")
 
-    # Selected linguistic sentiment model from Phase-2 comparison.
-    sentiment_model: str = "cardiffnlp/twitter-roberta-base-sentiment"
+    # Selected linguistic sentiment model: 'fast' for instant 512MB RAM execution without OOM.
+    sentiment_model: str = "fast"
 
     model_cache_dir: Path = Path("models/cache")
     max_upload_mb: int = 25

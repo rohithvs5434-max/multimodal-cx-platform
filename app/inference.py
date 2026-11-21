@@ -124,31 +124,89 @@ class MultimodalAnalyzer:
         finally:
             gc.collect()
 
-    def _fallback_sentiment(self, text: str) -> SentimentResult:
+    def _get_available_ram_mb(self) -> float:
+        try:
+            with open("/proc/meminfo") as f:
+                for line in f:
+                    if line.startswith("MemAvailable:"):
+                        return int(line.split()[1]) / 1024
+        except Exception:
+            pass
+        return 9999.0
+
+    def _fast_sentiment(self, text: str) -> SentimentResult:
+        if not text or not text.strip():
+            return SentimentResult(label="neutral", confidence=0.0)
+
+        pos_words = {
+            "good", "great", "excellent", "amazing", "love", "best", "thanks", "thank",
+            "happy", "perfect", "resolved", "solved", "fixed", "helpful", "pleased",
+            "wonderful", "appreciate", "fantastic", "glad", "awesome", "nice", "super"
+        }
         neg_words = {
             "bad", "terrible", "horrible", "awful", "angry", "hate", "worst", "broken",
             "issue", "problem", "cancel", "fail", "failed", "error", "poor", "frustrated",
-            "upset", "dogs", "disappointed", "annoyed", "wrong"
+            "upset", "refund", "charged", "scam", "wrong", "delay", "waiting", "disappointed",
+            "annoyed", "useless", "unhelpful", "sucks", "ridiculous"
         }
-        pos_words = {
-            "good", "great", "excellent", "amazing", "love", "best", "thanks", "thank",
-            "happy", "perfect", "resolved", "solved", "fixed", "helpful", "pleased", "wonderful"
-        }
-        words = set(re.findall(r"\b\w+\b", text.lower()))
-        neg_count = len(words & neg_words)
-        pos_count = len(words & pos_words)
-        if neg_count > pos_count:
-            return SentimentResult(label="negative", confidence=min(0.95, 0.65 + 0.1 * neg_count))
-        elif pos_count > neg_count:
-            return SentimentResult(label="positive", confidence=min(0.95, 0.65 + 0.1 * pos_count))
-        return SentimentResult(label="neutral", confidence=0.72)
+        intensifiers = {"very", "extremely", "really", "so", "completely", "totally", "deeply"}
+        negators = {"not", "never", "no", "hardly", "barely", "scarcely", "without", "didn't", "wasn't", "isn't", "don't"}
+
+        tokens = re.findall(r"[a-z']+", text.lower())
+        if not tokens:
+            return SentimentResult(label="neutral", confidence=0.60)
+
+        pos_score = 0.0
+        neg_score = 0.0
+
+        for i, w in enumerate(tokens):
+            weight = 1.0
+            is_negated = False
+            if i > 0:
+                prev = tokens[i - 1]
+                if prev in intensifiers:
+                    weight = 1.5
+                elif prev in negators:
+                    is_negated = True
+            if i > 1 and tokens[i - 2] in negators:
+                is_negated = True
+
+            if w in pos_words:
+                if is_negated:
+                    neg_score += weight
+                else:
+                    pos_score += weight
+            elif w in neg_words:
+                if is_negated:
+                    pos_score += weight
+                else:
+                    neg_score += weight
+
+        diff = pos_score - neg_score
+        total = pos_score + neg_score
+        if total == 0:
+            return SentimentResult(label="neutral", confidence=0.70)
+
+        confidence = min(0.98, max(0.60, 0.5 + (abs(diff) / (total + 1.0)) * 0.5))
+        if diff > 0.3:
+            return SentimentResult(label="positive", confidence=round(confidence, 3))
+        elif diff < -0.3:
+            return SentimentResult(label="negative", confidence=round(confidence, 3))
+        return SentimentResult(label="neutral", confidence=round(confidence, 3))
 
     def sentiment(self, text: str) -> SentimentResult:
         if not text:
             return SentimentResult(
                 label="neutral",
-                confidence=0,
+                confidence=0.0,
             )
+
+        # On Render / low-memory containers (RAM < 800 MB), use fast sentiment to avoid OS SIGKILL (OOM)
+        if (
+            self.settings.sentiment_model in ("fast", "vader", "lexicon")
+            or self._get_available_ram_mb() < 800
+        ):
+            return self._fast_sentiment(text)
 
         try:
             if self._sentiment is None:
@@ -183,8 +241,8 @@ class MultimodalAnalyzer:
                 confidence=float(result["score"]),
             )
         except Exception as exc:
-            print(f"Warning: Neural sentiment model unavailable ({exc}). Using heuristic fallback.")
-            return self._fallback_sentiment(text)
+            print(f"Warning: Neural sentiment model unavailable ({exc}). Using fast analyzer.")
+            return self._fast_sentiment(text)
         finally:
             gc.collect()
 

@@ -148,7 +148,8 @@ async def analyze_audio(
             analyzer.analyze, wav_path
         )
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Analysis failed: {exc}") from exc
+        print(f"Error during audio analysis: {exc}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
     finally:
         audio_path.unlink(missing_ok=True)
         if wav_path is not None:
