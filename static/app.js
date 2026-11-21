@@ -3,6 +3,25 @@ const $=id=>document.getElementById(id);
 const input=$("audio-input"),drop=$("dropzone"),choose=$("choose-btn"),selected=$("selected-file"),fileName=$("file-name"),fileSize=$("file-size"),remove=$("remove-file"),run=$("analyze-btn"),runLabel=$("analyze-label"),progress=$("progress-wrap"),progressLabel=$("progress-label"),error=$("error-box"),empty=$("empty-result"),content=$("result-content"),transcript=$("result-transcript"),emotion=$("result-emotion"),sentiment=$("result-sentiment"),emotionBar=$("emotion-bar"),sentimentBar=$("sentiment-bar"),emotionConf=$("emotion-confidence"),sentimentConf=$("sentiment-confidence"),attention=$("result-alert"),eventsEl=$("events"),template=$("event-template");
 const title=s=>String(s||"").replace(/\b\w/g,c=>c.toUpperCase()),pct=v=>`${(Number(v||0)*100).toFixed(1)}%`,size=n=>n<1048576?`${Math.round(n/1024)} KB`:`${(n/1048576).toFixed(2)} MB`;
 function showErr(s){error.textContent=s;error.classList.remove("hidden")}function clearErr(){error.classList.add("hidden")}
+
+async function parseResponse(r, fallbackMsg) {
+  const text = await r.text();
+  let d;
+  try {
+    d = JSON.parse(text);
+  } catch {
+    if (r.status === 502 || r.status === 503) {
+      throw Error("Backend server is deploying, restarting, or waking up. Please wait 30 seconds and try again.");
+    }
+    if (r.status === 504) {
+      throw Error("Request timed out while processing. Please try again.");
+    }
+    throw Error(fallbackMsg || `Server error (${r.status})`);
+  }
+  if (!r.ok) throw Error(d?.detail || fallbackMsg || `Request failed (${r.status})`);
+  return d;
+}
+
 function selectFile(f){if(!f){state.selectedFile=null;selected.classList.add("hidden");run.disabled=true;return}if(!f.type.startsWith("audio/")&&!/\.(wav|mp3|m4a|ogg|flac)$/i.test(f.name))return showErr("Please select a supported audio file.");if(f.size>25*1048576)return showErr("Audio exceeds the 25 MB upload limit.");clearErr();state.selectedFile=f;fileName.textContent=f.name;fileSize.textContent=size(f.size);selected.classList.remove("hidden");run.disabled=false}
 choose.onclick=()=>input.click();drop.onclick=e=>{if(!e.target.closest("button"))input.click()};input.onchange=()=>selectFile(input.files[0]);remove.onclick=()=>{input.value="";selectFile(null);clearErr()};
 ["dragenter","dragover"].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.add("dragging")}));["dragleave","drop"].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.remove("dragging")}));drop.ondrop=e=>selectFile(e.dataTransfer.files[0]);
@@ -10,9 +29,9 @@ function setBusy(v){state.busy=v;run.disabled=v||!state.selectedFile;runLabel.te
 function showResult(e){state.shown=e;empty.classList.add("hidden");content.classList.remove("hidden");$("result-source").textContent="AUDIO ANALYSIS";transcript.textContent=e.transcript||"No transcript returned.";const em=e.emotion||{},se=e.sentiment||{},fu=e.fusion||{},ec=Number(em.confidence||0),sc=Number(se.confidence||0);emotion.textContent=title(em.label||"Unknown");sentiment.textContent=title(se.label||"Unknown");emotionConf.textContent=pct(ec);sentimentConf.textContent=pct(sc);emotionBar.style.width=`${ec*100}%`;sentimentBar.style.width=`${sc*100}%`;$("result-fusion").textContent=title(fu.state||"Unknown");$("result-fusion-score").textContent=Number(fu.score||0).toFixed(3);showAttention(e);showFollowup(e);if(!live.on)$("result-card").scrollIntoView({behavior:"smooth",block:"nearest"})}
 function add(e){if(!e?.event_id||state.events.some(x=>x.event_id===e.event_id))return;state.events.push(e);state.lastId=e.event_id;localStorage.setItem("cx:last-event-id",state.lastId);render()}
 function render(){const latest=state.events.at(-1);$("event-count").textContent=state.events.length;$("emotion").textContent=title(latest?.emotion?.label||"—");$("sentiment").textContent=title(latest?.sentiment?.label||"—");$("alert-count").textContent=state.events.filter(x=>x.alert&&!x.handled).length;eventsEl.innerHTML="";if(!state.events.length){eventsEl.innerHTML='<div style="padding:28px;text-align:center;color:#60718e;font-size:9px">No events yet — analyze an audio file to begin.</div>';return}[...state.events].reverse().forEach(e=>{const n=template.content.cloneNode(true),r=n.querySelector(".event");r.classList.toggle("real",e.source==="audio");r.classList.toggle("has-alert",!!e.alert&&!e.handled);r.classList.toggle("resolved",!!e.handled);n.querySelector(".source").textContent=e.source==="audio"?"AUDIO ANALYSIS":"SIMULATED";n.querySelector("time").textContent=new Date(e.timestamp).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"});n.querySelector(".transcript").textContent=e.transcript||"—";n.querySelector(".emotion").textContent=`Emotion · ${title(e.emotion?.label)} (${pct(e.emotion?.confidence)})`;n.querySelector(".sentiment").textContent=`Sentiment · ${title(e.sentiment?.label)} (${pct(e.sentiment?.confidence)})`;const f=n.querySelector(".fusion");if(e.fusion)f.textContent=`Fusion · ${title(e.fusion.state)} (${Number(e.fusion.score||0).toFixed(3)})`;else f.remove();const a=n.querySelector(".alert");if(e.handled){a.textContent="Handled";a.dataset.severity="handled"}else if(e.attention){a.textContent=`${title(e.attention.severity)} attention`;a.dataset.severity=e.attention.severity}else if(e.alert)a.textContent="Customer Needs Attention";else a.remove();const cx=extras(e);if(cx)n.querySelector(".tags").parentNode.appendChild(cx);eventsEl.appendChild(n)})}
-run.onclick=async()=>{if(!state.selectedFile||state.busy)return;clearErr();setBusy(true);try{const f=new FormData();f.append("audio",state.selectedFile);{const c=$("customer-id").value.trim();if(c)f.append("customer_id",c)}const r=await fetch("/api/analyze",{method:"POST",body:f}),d=await r.json();if(!r.ok)throw Error(d.detail||"Audio analysis failed.");showResult(d);add(d);input.value="";selectFile(null)}catch(e){showErr(e.message||"Unable to analyze audio.")}finally{setBusy(false)}};
-$("demo").onclick=async()=>{const b=$("demo");try{b.disabled=true;b.textContent="Loading…";const r=await fetch("/api/demo/seed",{method:"POST"}),d=await r.json();if(!r.ok)throw Error(d.detail||"Unable to load demo events.");(d.events||[]).forEach(add)}catch(e){showErr(e.message)}finally{b.disabled=false;b.textContent="＋ Load demo events"}};
-async function catchUp(){try{const r=await fetch("/api/events?last_event_id=0-0");const d=await r.json();state.events=d;render();if(d.length)state.lastId=d.at(-1).event_id}catch{showErr("Event history unavailable.")}}
+run.onclick=async()=>{if(!state.selectedFile||state.busy)return;clearErr();setBusy(true);try{const f=new FormData();f.append("audio",state.selectedFile);{const c=$("customer-id").value.trim();if(c)f.append("customer_id",c)}const r=await fetch("/api/analyze",{method:"POST",body:f});const d=await parseResponse(r,"Audio analysis failed.");showResult(d);add(d);input.value="";selectFile(null)}catch(e){showErr(e.message||"Unable to analyze audio.")}finally{setBusy(false)}};
+$("demo").onclick=async()=>{const b=$("demo");try{b.disabled=true;b.textContent="Loading…";const r=await fetch("/api/demo/seed",{method:"POST"});const d=await parseResponse(r,"Unable to load demo events.");(d.events||[]).forEach(add)}catch(e){showErr(e.message)}finally{b.disabled=false;b.textContent="＋ Load demo events"}};
+async function catchUp(){try{const r=await fetch("/api/events?last_event_id=0-0");const d=await parseResponse(r,"Event history unavailable.");state.events=d;render();if(d.length)state.lastId=d.at(-1).event_id}catch(e){showErr("Event history unavailable (backend server may be starting up).")}}
 function connect(){const p=location.protocol==="https:"?"wss":"ws",s=new WebSocket(`${p}://${location.host}/ws/events?last_event_id=${encodeURIComponent(state.lastId)}`);s.onopen=()=>{$("status").textContent="Live";document.body.classList.add("connected")};s.onmessage=m=>{try{const e=JSON.parse(m.data);add(e);if(e.source==="audio")showResult(e)}catch{}};s.onclose=()=>{$("status").textContent="Reconnecting";document.body.classList.remove("connected");setTimeout(connect,1500)};s.onerror=()=>s.close()}
 render();catchUp().finally(connect);
 
@@ -36,8 +55,8 @@ async function sendClip(blob){
   try{
     const ext=blob.type.includes("mp4")?"mp4":blob.type.includes("ogg")?"ogg":"webm",f=new FormData();
     f.append("audio",blob,`live.${ext}`);{const c=$("customer-id").value.trim();if(c)f.append("customer_id",c)}
-    const r=await fetch("/api/analyze",{method:"POST",body:f}),d=await r.json();
-    if(!r.ok)throw Error(d.detail||"Live analysis failed.");
+    const r=await fetch("/api/analyze",{method:"POST",body:f});
+    const d=await parseResponse(r,"Live analysis failed.");
     live.clips++;liveCount.textContent=`${live.clips} clip${live.clips===1?"":"s"}`;
     showResult(d);add(d);
   }catch(e){showErr(e.message||"Live analysis failed.")}
@@ -80,8 +99,8 @@ function showFollowup(e){
 async function handleAlert(e,btn){
   btn.disabled=true;
   try{
-    const r=await fetch(`/api/alerts/${encodeURIComponent(e.event_id)}/handle`,{method:"POST"}),d=await r.json();
-    if(!r.ok)throw Error(d.detail||"Could not mark the alert as handled.");
+    const r=await fetch(`/api/alerts/${encodeURIComponent(e.event_id)}/handle`,{method:"POST"});
+    const d=await parseResponse(r,"Could not mark the alert as handled.");
     e.handled=true;if(state.shown===e)showAttention(e);render();
   }catch(x){btn.disabled=false;showErr(x.message)}
 }
