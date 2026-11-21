@@ -1,0 +1,84 @@
+{
+  "experiment": "Exact-protocol repeated 64-Mel CNN seeds",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "epochs": 20,
+  "batch_size": 16,
+  "device": "cpu",
+  "train_samples": 960,
+  "validation_samples": 240,
+  "test_samples": 240,
+  "per_seed_results": [
+    {
+      "seed": 42,
+      "best_epoch": 14,
+      "validation_weighted_f1": 0.5402744422570345,
+      "test_accuracy": 0.475,
+      "test_weighted_f1": 0.405800877186941,
+      "test_macro_f1": 0.3929383223627573
+    },
+    {
+      "seed": 43,
+      "best_epoch": 14,
+      "validation_weighted_f1": 0.5199954319488881,
+      "test_accuracy": 0.475,
+      "test_weighted_f1": 0.4709178584032385,
+      "test_macro_f1": 0.46421276498030883
+    },
+    {
+      "seed": 44,
+      "best_epoch": 15,
+      "validation_weighted_f1": 0.5262468824442892,
+      "test_accuracy": 0.4708333333333333,
+      "test_weighted_f1": 0.453511150600992,
+      "test_macro_f1": 0.4575741110958374
+    },
+    {
+      "seed": 45,
+      "best_epoch": 20,
+      "validation_weighted_f1": 0.5574583667744835,
+      "test_accuracy": 0.4625,
+      "test_weighted_f1": 0.45688735728209406,
+      "test_macro_f1": 0.4352763418964077
+    },
+    {
+      "seed": 46,
+      "best_epoch": 19,
+      "validation_weighted_f1": 0.6060918983209196,
+      "test_accuracy": 0.49166666666666664,
+      "test_weighted_f1": 0.4885943218163332,
+      "test_macro_f1": 0.465410117879283
+    }
+  ],
+  "summary": {
+    "accuracy": {
+      "mean": 0.475,
+      "std": 0.010622957319984952,
+      "min": 0.4625,
+      "max": 0.49166666666666664,
+      "ci95_lower": 0.46180985684108594,
+      "ci95_upper": 0.488190143158914
+    },
+    "weighted_f1": {
+      "mean": 0.4551423130579198,
+      "std": 0.03085525840529577,
+      "min": 0.405800877186941,
+      "max": 0.4885943218163332,
+      "ci95_lower": 0.41683045099240285,
+      "ci95_upper": 0.49345417512343676
+    },
+    "macro_f1": {
+      "mean": 0.44308233164291877,
+      "std": 0.03053846781342449,
+      "min": 0.3929383223627573,
+      "max": 0.465410117879283,
+      "ci95_lower": 0.40516381703539434,
+      "ci95_upper": 0.4810008462504432
+    }
+  }
+}

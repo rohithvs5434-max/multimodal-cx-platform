@@ -1,0 +1,84 @@
+{
+  "experiment": "Repeated-seed 64-Mel compact CNN",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "epochs": 20,
+  "batch_size": 16,
+  "device": "cpu",
+  "train_samples": 960,
+  "validation_samples": 240,
+  "test_samples": 240,
+  "per_seed_results": [
+    {
+      "seed": 42,
+      "best_epoch": 20,
+      "validation_weighted_f1": 0.5206521769436756,
+      "test_accuracy": 0.4666666666666667,
+      "test_weighted_f1": 0.45824239985062115,
+      "test_macro_f1": 0.4536407113984188
+    },
+    {
+      "seed": 43,
+      "best_epoch": 16,
+      "validation_weighted_f1": 0.5337000021440536,
+      "test_accuracy": 0.49166666666666664,
+      "test_weighted_f1": 0.4783487070605121,
+      "test_macro_f1": 0.4692852462025634
+    },
+    {
+      "seed": 44,
+      "best_epoch": 11,
+      "validation_weighted_f1": 0.5657757255172894,
+      "test_accuracy": 0.4708333333333333,
+      "test_weighted_f1": 0.46057239459373317,
+      "test_macro_f1": 0.44494451466846696
+    },
+    {
+      "seed": 45,
+      "best_epoch": 17,
+      "validation_weighted_f1": 0.5679654434103639,
+      "test_accuracy": 0.4625,
+      "test_weighted_f1": 0.4499971475287137,
+      "test_macro_f1": 0.4292252669846397
+    },
+    {
+      "seed": 46,
+      "best_epoch": 16,
+      "validation_weighted_f1": 0.5807352048276601,
+      "test_accuracy": 0.45416666666666666,
+      "test_weighted_f1": 0.41625996912083163,
+      "test_macro_f1": 0.39024372105077965
+    }
+  ],
+  "summary": {
+    "accuracy": {
+      "mean": 0.4691666666666666,
+      "std": 0.014006446928309664,
+      "min": 0.45416666666666666,
+      "max": 0.49166666666666664,
+      "ci95_lower": 0.45177536643197846,
+      "ci95_upper": 0.4865579669013548
+    },
+    "weighted_f1": {
+      "mean": 0.45268412363088234,
+      "std": 0.022834890892449913,
+      "min": 0.41625996912083163,
+      "max": 0.4783487070605121,
+      "ci95_lower": 0.4243308627811039,
+      "ci95_upper": 0.4810373844806608
+    },
+    "macro_f1": {
+      "mean": 0.4374678920609737,
+      "std": 0.030115889457464625,
+      "min": 0.39024372105077965,
+      "max": 0.4692852462025634,
+      "ci95_lower": 0.4000740777645842,
+      "ci95_upper": 0.4748617063573632
+    }
+  }
+}

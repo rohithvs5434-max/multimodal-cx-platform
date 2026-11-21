@@ -1,0 +1,17 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      EMOTION_MODEL_PATH: /app/models/emotion_cnn.pt
+    depends_on:
+      - redis
+volumes:
+  redis-data:

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b14">
+<title>Customer Review Sentiment Analysis</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="ambient a"></div><div class="ambient b"></div>
+
+<main class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"><span></span><span></span><span></span></div>
+      <div><div class="brand-title">CX<span>INTELLIGENCE</span></div><div class="brand-caption">MULTIMODAL CUSTOMER EXPERIENCE PLATFORM</div></div>
+    </div>
+    <div class="top-actions">
+      <span class="deployment">LOCAL DEPLOYMENT</span>
+      <span class="live"><i></i><b id="status">Connecting</b></span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-main">
+      <div class="kicker">REAL-TIME CUSTOMER SIGNALS</div>
+      <h1>Customer Review Sentiment Analysis</h1>
+      <p>Analyze customer speech and combine transcript sentiment with vocal emotion through explicit multimodal late fusion.</p>
+    </div>
+    <div class="hero-pipeline">
+      <div class="pipeline-head"><span>ANALYSIS PIPELINE</span><b>LIVE</b></div>
+      <div class="pipeline">
+        <div class="node active"><strong>01</strong><span>Audio</span></div><em>→</em>
+        <div class="node"><strong>02</strong><span>Whisper</span></div><em>→</em>
+        <div class="node"><strong>03</strong><span>Emotion CNN</span></div><em>→</em>
+        <div class="node"><strong>04</strong><span>Sentiment</span></div><em>→</em><div class="node"><strong>05</strong><span>Fusion</span></div>
+      </div>
+      <div class="pipeline-foot"><span>Speech recognition</span><span>Voice emotion</span><span>Text polarity</span></div>
+    </div>
+  </section>
+
+  <section class="workspace">
+    <article class="card input-card">
+      <div class="card-head">
+        <div class="title-block"><span class="step">01</span><div><small>INPUT</small><h2>Analyze customer audio</h2></div></div>
+        <span class="ready"><i></i>READY</span>
+      </div>
+      <label class="cust"><small>CUSTOMER ID (OPTIONAL)</small><input id="customer-id" type="text" maxlength="64" placeholder="e.g. CUST-1042" autocomplete="off"><em>Add an ID to track whether this customer's next interaction improves.</em></label>
+      <div class="dropzone" id="dropzone">
+        <input id="audio-input" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
+        <div class="upload-icon">↥</div>
+        <h3>Drop an audio file here</h3>
+        <p>Drag and drop or browse from your device</p>
+        <button id="choose-btn" class="choose" type="button">Choose audio file</button>
+        <small>WAV · MP3 · M4A · OGG · FLAC <b>·</b> Max 25 MB</small>
+      </div>
+      <div id="selected-file" class="file-row hidden">
+        <span class="file-badge">AUDIO</span><div><b id="file-name"></b><small id="file-size"></small></div><button id="remove-file" type="button">×</button>
+      </div>
+      <button id="analyze-btn" class="run" disabled><span>✦</span><b id="analyze-label">Run multimodal analysis</b><strong>→</strong></button>
+      <div id="progress-wrap" class="progress hidden"><div class="progress-copy"><span id="progress-label">Processing audio…</span><b>AI PIPELINE</b></div><div class="track"><i id="progress-bar"></i></div></div>
+      <div id="error-box" class="error hidden"></div>
+      <div class="live-divider"><span>or record live</span></div>
+      <div class="live-panel">
+        <div class="live-top">
+          <div><small>LIVE MICROPHONE</small><b id="live-status">Idle</b></div>
+          <span class="live-count" id="live-count">0 clips</span>
+        </div>
+        <div class="live-viz" id="live-viz" aria-hidden="true"></div>
+        <button id="live-btn" class="live-btn" type="button"><span class="rec-dot"></span><b id="live-label">Start live analysis</b></button>
+        <small class="live-note">Audio is split into 6-second clips; each clip is analysed and added to the stream.</small>
+      </div>
+    </article>
+
+    <article class="card result-card" id="result-card">
+      <div class="card-head">
+        <div class="title-block"><span class="step">02</span><div><small>AI OUTPUT</small><h2>Interaction intelligence</h2></div></div>
+        <span id="result-source" class="source-tag">AWAITING AUDIO</span>
+      </div>
+
+      <div id="empty-result" class="result-empty">
+        <div class="radar"><span></span><i></i></div>
+        <h3>Ready for analysis</h3>
+        <p>Upload a customer interaction to generate the transcript, emotion and sentiment profile here.</p>
+        <div class="output-list"><span>Transcript extraction</span><span>Voice emotion detection</span><span>Sentiment classification</span></div>
+      </div>
+
+      <div id="result-content" class="hidden">
+        <div class="transcript"><small>TRANSCRIPT</small><p id="result-transcript">—</p></div>
+        <div class="signals">
+          <div class="signal"><div class="signal-top"><span>VOICE EMOTION</span><b id="emotion-confidence">—</b></div><strong id="result-emotion">—</strong><div class="meter"><i id="emotion-bar"></i></div><small>Speech emotion classifier</small></div>
+          <div class="signal"><div class="signal-top"><span>TEXT SENTIMENT</span><b id="sentiment-confidence">—</b></div><strong id="result-sentiment">—</strong><div class="meter"><i id="sentiment-bar"></i></div><small>Transformer sentiment model</small></div>
+          <div class="signal fusion-signal"><div class="signal-top"><span>MULTIMODAL FUSION</span><b id="result-fusion-score">—</b></div><strong id="result-fusion">—</strong><div class="meter"><i style="width:50%"></i></div><small>Output-level late fusion</small></div>
+        </div>
+        <div id="result-alert" class="attention hidden"><span>!</span><div><b id="alert-title">Customer needs attention</b><small id="alert-detail">Negative sentiment detected in this interaction.</small><ul id="alert-actions" class="actions"></ul></div></div>
+        <div id="result-followup" class="followup hidden"></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="operations">
+    <div class="section-heading"><span>03 · LIVE OPERATIONS</span><small>REDIS STREAM · REAL-TIME</small></div>
+    <div class="metrics">
+      <article><span>EVENTS PROCESSED</span><strong id="event-count">0</strong><small>Retained event history</small></article>
+      <article><span>LATEST EMOTION</span><strong id="emotion">—</strong><small>Most recent voice signal</small></article>
+      <article><span>LATEST SENTIMENT</span><strong id="sentiment">—</strong><small>Most recent text signal</small></article>
+      <article class="alert-metric"><span>ATTENTION ALERTS</span><strong id="alert-count">0</strong><small>Open, not yet handled</small></article>
+    </div>
+  </section>
+
+  <section class="stream card">
+    <div class="stream-head">
+      <div><div class="section-heading">04 · EVENT STREAM</div><h2>Recent interactions</h2></div>
+      <button id="demo" class="demo" type="button">＋ Load demo events</button>
+    </div>
+    <div id="events" class="events"></div>
+  </section>
+
+  <footer><span>CX INTELLIGENCE</span><span>WHISPER · CNN · TRANSFORMER · REDIS STREAMS · FASTAPI</span></footer>
+</main>
+
+<template id="event-template">
+<article class="event">
+  <div class="event-meta"><span class="source"></span><time></time></div>
+  <div><p class="transcript"></p><div class="tags"><span class="emotion"></span><span class="sentiment"></span><span class="fusion"></span><span class="alert"></span></div></div>
+</article>
+</template>
+<script src="/static/app.js"></script>
+</body>
+</html>

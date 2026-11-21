@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS Files
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Project-specific Data & Cache
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Models & Weights
+models/*.pt
+models/*.pth
+!models/emotion_cnn.pt
+!models/.gitkeep
+models/cache/
+models/comparison/
+
+# Audit Dumps
+*_audit.txt
+project_audit.txt
+code_audit.txt

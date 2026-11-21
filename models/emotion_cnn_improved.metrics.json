@@ -1,0 +1,74 @@
+{
+  "experiment": "improved_cnn_architecture",
+  "device": "cpu",
+  "seed": 42,
+  "epochs": 20,
+  "batch_size": 16,
+  "best_epoch": 17,
+  "parameter_count": 307464,
+  "validation_weighted_f1": 0.5447667731301805,
+  "test_weighted_f1": 0.378360849879842,
+  "classification_report": {
+    "angry": {
+      "precision": 1.0,
+      "recall": 0.125,
+      "f1-score": 0.2222222222222222,
+      "support": 32.0
+    },
+    "calm": {
+      "precision": 0.5490196078431373,
+      "recall": 0.875,
+      "f1-score": 0.6746987951807228,
+      "support": 32.0
+    },
+    "disgust": {
+      "precision": 0.421875,
+      "recall": 0.84375,
+      "f1-score": 0.5625,
+      "support": 32.0
+    },
+    "fearful": {
+      "precision": 0.75,
+      "recall": 0.09375,
+      "f1-score": 0.16666666666666666,
+      "support": 32.0
+    },
+    "happy": {
+      "precision": 0.35714285714285715,
+      "recall": 0.3125,
+      "f1-score": 0.3333333333333333,
+      "support": 32.0
+    },
+    "neutral": {
+      "precision": 0.75,
+      "recall": 0.375,
+      "f1-score": 0.5,
+      "support": 16.0
+    },
+    "sad": {
+      "precision": 0.15789473684210525,
+      "recall": 0.09375,
+      "f1-score": 0.11764705882352941,
+      "support": 32.0
+    },
+    "surprised": {
+      "precision": 0.3870967741935484,
+      "recall": 0.75,
+      "f1-score": 0.5106382978723404,
+      "support": 32.0
+    },
+    "accuracy": 0.4375,
+    "macro avg": {
+      "precision": 0.546628622002706,
+      "recall": 0.43359375,
+      "f1-score": 0.38596329676235186,
+      "support": 240.0
+    },
+    "weighted avg": {
+      "precision": 0.5330705301362197,
+      "recall": 0.4375,
+      "f1-score": 0.378360849879842,
+      "support": 240.0
+    }
+  }
+}
