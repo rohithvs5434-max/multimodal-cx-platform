@@ -38,12 +38,28 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 async def startup() -> None:
-    redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    try:
-        await redis.ping()
-    except Exception as exc:  # Startup should explain a missing local Redis service.
-        await redis.aclose()
-        raise RuntimeError("Redis is unavailable. Start it with `redis-server` or Docker Compose.") from exc
+    redis = None
+    if settings.redis_url:
+        try:
+            r = Redis.from_url(settings.redis_url, decode_responses=True)
+            await asyncio.wait_for(r.ping(), timeout=3.0)
+            redis = r
+            print("Connected to configured Redis.")
+        except Exception as exc:
+            print(f"Warning: Could not connect to configured Redis ({exc})")
+
+    if redis is None:
+        try:
+            local_r = Redis.from_url("redis://127.0.0.1:6379/0", decode_responses=True)
+            await asyncio.wait_for(local_r.ping(), timeout=2.0)
+            redis = local_r
+            print("Connected to local fallback Redis.")
+        except Exception as exc:
+            print(f"Warning: Local fallback Redis also unavailable: {exc}")
+
+    if redis is None:
+        redis = Redis.from_url("redis://127.0.0.1:6379/0", decode_responses=True)
+
     app.state.redis = redis
     app.state.events = EventStream(redis, settings.redis_stream_key, settings.event_retention)
     app.state.analyzer = MultimodalAnalyzer(settings)
