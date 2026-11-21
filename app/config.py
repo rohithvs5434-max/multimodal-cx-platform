@@ -1,5 +1,7 @@
 from pathlib import Path
+import re
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +23,16 @@ class Settings(BaseSettings):
 
     model_cache_dir: Path = Path("models/cache")
     max_upload_mb: int = 25
+
+    @field_validator("redis_url", mode="before")
+    @classmethod
+    def clean_redis_url(cls, v: str) -> str:
+        if not isinstance(v, str):
+            return v
+        match = re.search(r"(rediss?://[^\s\"\'\)]+)", v)
+        if match:
+            return match.group(1)
+        return v.strip().strip("\"'")
 
     model_config = SettingsConfigDict(
         env_file=".env",
