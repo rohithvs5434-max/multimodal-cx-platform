@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     redis_stream_key: str = "cx:events"
     event_retention: int = 1000
 
-    # Selected ASR model from Phase-2 comparison.
-    whisper_model: str = "base"
+    # Selected ASR model: 'tiny' for fast inference and 512MB RAM compatibility.
+    whisper_model: str = "tiny"
 
     # Selected acoustic emotion model from Phase-2 comparison.
     emotion_model_path: Path = Path("models/emotion_cnn.pt")

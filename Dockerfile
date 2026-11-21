@@ -25,7 +25,10 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 COPY --chown=user . .
 
 # Ensure working directories exist and entrypoint is executable
-RUN mkdir -p models/cache data/raw data/processed && chmod +x entrypoint.sh
+RUN mkdir -p models/cache/whisper models/cache/huggingface data/raw data/processed && chmod +x entrypoint.sh
+
+# Pre-cache Whisper tiny model (39MB) during build to eliminate runtime download delay/timeouts
+RUN python3 -c "import whisper; whisper.load_model('tiny', download_root='/home/user/app/models/cache/whisper')" || true
 
 EXPOSE 8000 10000
 
